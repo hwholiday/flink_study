@@ -1,7 +1,10 @@
 package table;
 
+import com.ibm.icu.text.SimpleDateFormat;
 import org.apache.flink.api.common.eventtime.SerializableTimestampAssigner;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
+import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
@@ -17,7 +20,7 @@ import java.util.Date;
 import static org.apache.flink.table.api.Expressions.$;
 import static org.apache.flink.table.api.Expressions.lit;
 
-public class Keep {
+public class Keep_customize {
     public static void main(String[] args) throws Exception {
         StreamExecutionEnvironment bsEnv = StreamExecutionEnvironment.getExecutionEnvironment();
         EnvironmentSettings bsSettings = EnvironmentSettings.newInstance().useBlinkPlanner().inStreamingMode().build();
@@ -39,7 +42,7 @@ public class Keep {
                             i = 1;
                         }
                         ctx.collect(msg);
-                        Thread.sleep(1000);
+                        Thread.sleep(100);
                     }
                 }
             }
@@ -60,11 +63,14 @@ public class Keep {
                 .window(Tumble.over(lit(10).seconds()).on($("loginTime")).as("w"))
                 .groupBy($("w"), $("name"))
                 .select($("name"), $("num").count().as("cnt"), $("w").start().as("start"), $("w").end().as("end"), $("w").rowtime().as("rowTime"));
-        DataStream<Result> d = bsTableEnv.toAppendStream(result, Result.class);
-        d.addSink(new SinkFunction<Result>() {
+        DataStream<Tuple2<Boolean, Result>> d = bsTableEnv.toRetractStream(result, Result.class);
+        d.addSink(new SinkFunction<Tuple2<Boolean, Result>>() {
             @Override
-            public void invoke(Result value, Context context) throws Exception {
+            public void invoke(Tuple2<Boolean, Result> value, Context context) throws Exception {
+                SimpleDateFormat tf = new SimpleDateFormat("yyyy年MM月dd日 HH时mm分ss秒");
+                System.out.println("--------------------- " + tf.format(new Date()));
                 System.out.println(value.toString());
+                System.out.println("++++++++++++++++++++++");
             }
         });
         bsEnv.execute("data");
