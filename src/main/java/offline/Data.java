@@ -4,14 +4,14 @@ import java.sql.Timestamp;
 
 public class Data {
     String name;
-    Timestamp loginTime;
+    Long loginTime;
     Integer num;
 
     public Data() {
     }
 
 
-    public Data(String name, Timestamp loginTime, Integer num) {
+    public Data(String name, Long loginTime, Integer num) {
         this.name = name;
         this.loginTime = loginTime;
         this.num = num;
@@ -25,11 +25,11 @@ public class Data {
         this.name = name;
     }
 
-    public Timestamp getLoginTime() {
+    public Long getLoginTime() {
         return loginTime;
     }
 
-    public void setLoginTime(Timestamp loginTime) {
+    public void setLoginTime(Long loginTime) {
         this.loginTime = loginTime;
     }
 
