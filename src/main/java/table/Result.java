@@ -1,4 +1,4 @@
-package offline;
+package table;
 
 import java.sql.Timestamp;
 

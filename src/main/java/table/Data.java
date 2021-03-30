@@ -1,6 +1,4 @@
-package offline;
-
-import java.sql.Timestamp;
+package table;
 
 public class Data {
     String name;
