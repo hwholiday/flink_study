@@ -7,6 +7,7 @@ import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.ReduceFunction;
+import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -131,7 +132,7 @@ public class MsgJob {
                         String windowSEnd = ft.format(context.window().getEnd());
                         switch (iterable.iterator().next().msgType) {
                             case APPID:
-                                 data = "APPID :" + integer + " 发言数 :" + iterable.iterator().next().msgCount + "   windowStart :" + windowStart + "   windowSEnd :" + windowSEnd;
+                                data = "APPID :" + integer + " 发言数 :" + iterable.iterator().next().msgCount + "   windowStart :" + windowStart + "   windowSEnd :" + windowSEnd;
                             case BROADCAST:
                                 data = "BROADCAST :" + integer + " 发言数 :" + iterable.iterator().next().msgCount + "   windowStart :" + windowStart + "   windowSEnd :" + windowSEnd;
                             case BROADCAST_GROUP:
@@ -142,7 +143,7 @@ public class MsgJob {
                                 data = "SINGLE_CHAT :" + integer + " 发言数 :" + iterable.iterator().next().msgCount + "   windowStart :" + windowStart + "   windowSEnd :" + windowSEnd;
                                 break;
                             default:
-                                throw new IllegalStateException("Unexpected value: " + iterable.iterator().next().msgType);
+                                data = "";
                         }
                         collector.collect(data);
                     }
