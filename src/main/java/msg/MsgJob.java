@@ -7,17 +7,12 @@ import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.ReduceFunction;
-import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
-import org.apache.flink.streaming.api.functions.windowing.WindowFunction;
-import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
-import org.apache.flink.streaming.api.windowing.assigners.SlidingProcessingTimeWindows;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
@@ -26,6 +21,8 @@ import org.apache.flink.util.Collector;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.Date;
+
+import static msg.Msg.*;
 
 public class MsgJob {
 
@@ -106,7 +103,7 @@ public class MsgJob {
                         SimpleDateFormat ft = new SimpleDateFormat("yyyy年MM月dd日 HH时mm分ss秒");
                         String windowStart = ft.format(context.window().getStart());
                         String windowSEnd = ft.format(context.window().getEnd());
-                        String data = "uid :" + integer + " num :" + iterable.iterator().next() + "windowStart :" + windowStart + "windowSEnd :" + windowSEnd;
+                        String data = "用户ID :" + integer + " 发言数 :" + iterable.iterator().next() + "   windowStart :" + windowStart + "   windowSEnd :" + windowSEnd;
                         collector.collect(data);
                     }
                 }).addSink(new SinkFunction<String>() {
@@ -117,6 +114,39 @@ public class MsgJob {
                 System.out.println(value.toString());
             }
         });
+        data.keyBy(v -> v.msgType)
+                .window(TumblingEventTimeWindows.of(Time.seconds(10)))
+                .reduce(new ReduceFunction<Msg>() {
+                    @Override
+                    public Msg reduce(Msg msg, Msg t1) throws Exception {
+                        msg.msgCount += t1.msgCount;
+                        return msg;
+                    }
+                }, new ProcessWindowFunction<Msg, String, Integer, TimeWindow>() {
+                    @Override
+                    public void process(Integer integer, Context context, Iterable<Msg> iterable, Collector<String> collector) throws Exception {
+                        String data;
+                        SimpleDateFormat ft = new SimpleDateFormat("yyyy年MM月dd日 HH时mm分ss秒");
+                        String windowStart = ft.format(context.window().getStart());
+                        String windowSEnd = ft.format(context.window().getEnd());
+                        switch (iterable.iterator().next().msgType) {
+                            case APPID:
+                                 data = "APPID :" + integer + " 发言数 :" + iterable.iterator().next().msgCount + "   windowStart :" + windowStart + "   windowSEnd :" + windowSEnd;
+                            case BROADCAST:
+                                data = "BROADCAST :" + integer + " 发言数 :" + iterable.iterator().next().msgCount + "   windowStart :" + windowStart + "   windowSEnd :" + windowSEnd;
+                            case BROADCAST_GROUP:
+                                data = "BROADCAST_GROUP :" + integer + " 发言数 :" + iterable.iterator().next().msgCount + "   windowStart :" + windowStart + "   windowSEnd :" + windowSEnd;
+                            case ROOM:
+                                data = "ROOM :" + integer + " 发言数 :" + iterable.iterator().next().msgCount + "   windowStart :" + windowStart + "   windowSEnd :" + windowSEnd;
+                            case SINGLE_CHAT:
+                                data = "SINGLE_CHAT :" + integer + " 发言数 :" + iterable.iterator().next().msgCount + "   windowStart :" + windowStart + "   windowSEnd :" + windowSEnd;
+                                break;
+                            default:
+                                throw new IllegalStateException("Unexpected value: " + iterable.iterator().next().msgType);
+                        }
+                        collector.collect(data);
+                    }
+                }).print();
         env.execute("msg");
     }
 }
